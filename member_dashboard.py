@@ -14,24 +14,20 @@ def get_dashboard_response(dashboard_request, provider_id=None):
     
     Delegates to grafana_panel_utils.alyf_get_member_panels_for_all_vitals for iframe generation.
     """
-    from src.common.grafana_panel_utils import alyf_get_member_panels_for_all_vitals
-    
     member_record = ALYF_MEMBER_OPS.get(dashboard_request.member_id)
     
-    df = AlyfTable("vitals_catalog").read(
-        filters={"category": "!= subjective", "vital_name": "!= soap"},
-        selected_columns=["vital_display_name"]
+    df = AlyfTable("alyf_vitals").read(
+        filters={"member_id": member_record["member_id"]},
+        selected_columns=["vital_name"]
     )
-    vitals = df["vital_display_name"].tolist() if not df.empty else []
+    unique_vitals = df["vital_name"].unique().tolist()
     
-    # Using existing function to generate panels
     return alyf_get_member_panels_for_all_vitals(
         member_record=member_record,
-        vitals=vitals,
-        start_time=dashboard_request.time_range.start_timestamp,
-        end_time=dashboard_request.time_range.end_timestamp
+        vitals=unique_vitals,
+        start_time=dashboard_request.time_range.start_timestamp.replace(tzinfo=None),
+        end_time=dashboard_request.time_range.end_timestamp.replace(tzinfo=None)
     )
-
 
 
 #stuff going inside router.py
